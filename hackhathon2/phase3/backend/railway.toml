@@ -1,6 +1,4 @@
-"""
-Railway deployment configuration for FastAPI backend.
-"""
+# Railway deployment configuration for FastAPI backend
 
 [build]
 builder = "NIXPACKS"
