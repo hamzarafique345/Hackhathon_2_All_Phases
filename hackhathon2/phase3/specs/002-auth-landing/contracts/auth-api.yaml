@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Todo App Authentication API
+  description: Authentication endpoints for user registration and sign-in using JWT tokens
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server (to be configured)
+
+tags:
+  - name: Authentication
+    description: User registration and authentication endpoints
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user account
+      description: Creates a new user account with email and password, returns JWT token
+      operationId: signUp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+            examples:
+              validSignUp:
+                summary: Valid sign-up request
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                  name: John Doe
+      responses:
+        '201':
+          description: User account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Successful registration
+                  value:
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: user@example.com
+                      name: John Doe
+                      created_at: '2026-01-08T12:00:00Z'
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    expiresAt: '2026-01-15T12:00:00Z'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    detail: Invalid email format
+                shortPassword:
+                  summary: Password too short
+                  value:
+                    detail: Password must be at least 8 characters
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateEmail:
+                  summary: Email already exists
+                  value:
+                    detail: Email already registered
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in to existing account
+      description: Authenticates user with email and password, returns JWT token
+      operationId: signIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+            examples:
+              validSignIn:
+                summary: Valid sign-in request
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                  rememberMe: true
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Successful authentication
+                  value:
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: user@example.com
+                      name: John Doe
+                      created_at: '2026-01-08T12:00:00Z'
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    expiresAt: '2026-01-15T12:00:00Z'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  summary: Wrong email or password
+                  value:
+                    detail: Invalid email or password
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/verify:
+    get:
+      tags:
+        - Authentication
+      summary: Verify JWT token validity
+      description: Validates the provided JWT token and returns user information
+      operationId: verifyToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidToken:
+                  summary: Token invalid
+                  value:
+                    detail: Invalid authentication token
+                expiredToken:
+                  summary: Token expired
+                  value:
+                    detail: Authentication token has expired
+
+components:
+  schemas:
+    SignUpRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: User's email address (used as username)
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: User's password (minimum 8 characters)
+          example: SecurePass123
+        name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: User's display name (optional)
+          example: John Doe
+
+    SignInRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: SecurePass123
+        rememberMe:
+          type: boolean
+          default: false
+          description: Extend session to 7 days if true, otherwise session-based
+          example: true
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        name:
+          type: string
+          nullable: true
+          description: User's display name
+          example: John Doe
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp (ISO 8601)
+          example: '2026-01-08T12:00:00Z'
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+        - expiresAt
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT authentication token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJleHAiOjE3MDQ3MjAwMDB9.signature
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp (ISO 8601)
+          example: '2026-01-15T12:00:00Z'
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: Invalid email format
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from sign-up or sign-in endpoints
+
+security:
+  - bearerAuth: []
