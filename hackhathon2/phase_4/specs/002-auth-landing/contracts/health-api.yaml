@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: Todo App Health Check API
+  description: Health check endpoint for service monitoring and availability verification
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server (to be configured)
+
+tags:
+  - name: Health
+    description: Service health and status endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check service health
+      description: Returns service health status and basic system information
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy and operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy service
+                  value:
+                    status: healthy
+                    timestamp: '2026-01-08T12:00:00Z'
+                    version: 1.0.0
+                    database: connected
+        '503':
+          description: Service is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                unhealthy:
+                  summary: Unhealthy service
+                  value:
+                    status: unhealthy
+                    timestamp: '2026-01-08T12:00:00Z'
+                    version: 1.0.0
+                    database: disconnected
+                    error: Database connection failed
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Check service readiness
+      description: Returns whether service is ready to accept requests (all dependencies available)
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready to accept requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+              examples:
+                ready:
+                  summary: Service ready
+                  value:
+                    ready: true
+                    checks:
+                      database: true
+                      auth: true
+        '503':
+          description: Service is not ready (dependencies unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+              examples:
+                notReady:
+                  summary: Service not ready
+                  value:
+                    ready: false
+                    checks:
+                      database: false
+                      auth: true
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Check service liveness
+      description: Returns whether service is alive (basic process health check)
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+              examples:
+                alive:
+                  summary: Service alive
+                  value:
+                    alive: true
+                    timestamp: '2026-01-08T12:00:00Z'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - unhealthy
+            - degraded
+          description: Overall service health status
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp (ISO 8601)
+          example: '2026-01-08T12:00:00Z'
+        version:
+          type: string
+          description: Service version
+          example: 1.0.0
+        database:
+          type: string
+          enum:
+            - connected
+            - disconnected
+          description: Database connection status
+          example: connected
+        error:
+          type: string
+          nullable: true
+          description: Error message if service is unhealthy
+          example: Database connection failed
+
+    ReadinessResponse:
+      type: object
+      required:
+        - ready
+        - checks
+      properties:
+        ready:
+          type: boolean
+          description: Whether service is ready to accept requests
+          example: true
+        checks:
+          type: object
+          description: Individual dependency readiness checks
+          properties:
+            database:
+              type: boolean
+              description: Database connection ready
+              example: true
+            auth:
+              type: boolean
+              description: Authentication service ready
+              example: true
+
+    LivenessResponse:
+      type: object
+      required:
+        - alive
+        - timestamp
+      properties:
+        alive:
+          type: boolean
+          description: Whether service process is alive
+          example: true
+        timestamp:
+          type: string
+          format: date-time
+          description: Liveness check timestamp (ISO 8601)
+          example: '2026-01-08T12:00:00Z'
