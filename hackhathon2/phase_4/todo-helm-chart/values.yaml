@@ -1,0 +1,51 @@
+# Default values for todo-app Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+frontend:
+  image:
+    repository: todo-frontend
+    tag: v4
+    pullPolicy: Never
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  env:
+    betterAuthUrl: "http://todo.local"
+    nextPublicApiUrl: "http://todo.local"
+
+backend:
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+config:
+  jwtAlgorithm: "HS256"
+  frontendUrl: "http://localhost:30000"
+  apiBaseUrl: "http://backend-service:8000"
+
+# Note: Secrets must be created manually before deployment
+# kubectl create secret generic todo-secrets \
+#   --from-literal=DATABASE_URL='postgresql://...' \
+#   --from-literal=BETTER_AUTH_SECRET='your-secret-here' \
+#   --from-literal=OPENROUTER_API_KEY='your-api-key-here'
