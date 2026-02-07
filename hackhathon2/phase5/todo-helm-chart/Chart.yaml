@@ -1,0 +1,13 @@
+apiVersion: v2
+name: todo-app
+description: A Helm chart for Todo Chatbot application with FastAPI backend and Next.js frontend
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - chatbot
+  - fastapi
+  - nextjs
+maintainers:
+  - name: Todo App Team
